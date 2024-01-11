@@ -20,18 +20,18 @@ from diffusers import StableVideoDiffusionPipeline
 from diffusers.utils import load_image, export_to_video
 
 
-go_livepeer_url = os.getenv("GO_LIVEPEER_URL","http://127.0.0.1:8935")
-go_livepeer_secret = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
-capability_url = os.getenv("LIVEPEER_JOB_URL","http://127.0.0.1:9595/process")
-capability = os.getenv("LIVEPEER_JOB_CAPABILITY", "stable-video-diffusion")
-capability_desc = os.getenv("LIVEPEER_JOB_CAPABILITY_DESCRIPTION", "generate videos using stable-video-diffusion")
-capability_capacity = os.getenv("LIVEPEER_JOB_CAPABILITY_CAPACITY", 1)
-capability_price = os.getenv("LIVEPEER_JOB_CAPABILITY_PRICE", "100/1")
-model_path = os.getenv("MODEL_PATH", "models/stable-video-diffusion-img2vid-xt")
-tmp_file_path = os.getenv("TMP_FILE_PATH", "~/svd")
+GO_LIVEPEER_URL = os.getenv("GO_LIVEPEER_URL","https://127.0.0.1:8935")
+GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
 
-#start api
-app = FastAPI()
+GPU = os.getenv("USE_GPU","cuda:0")
+CAPABILITY = os.getenv("LIVEPEER_JOB_CAPABILITY", "stable-video-diffusion")
+CAPABILITY_URL = os.getenv("LIVEPEER_JOB_URL","http://127.0.0.1:9000/process")
+CAPABILITY_DESC = os.getenv("LIVEPEER_JOB_CAPABILITY_DESCRIPTION", "generate videos using stable-video-diffusion")
+CAPABILITY_CAPACITY = os.getenv("LIVEPEER_JOB_CAPABILITY_CAPACITY", 1)
+CAPABILITY_PRICE = os.getenv("LIVEPEER_JOB_CAPABILITY_PRICE", "100/1")
+MODEL_PATH = os.getenv("MODEL_PATH", "models/stable-video-diffusion-img2vid-xt")
+TMP_FILE_PATH = os.getenv("TMP_FILE_PATH", "~/svd")
+
 
 #register capabilities available with this api
 in_process = {}
@@ -39,30 +39,41 @@ in_process = {}
 @asynccontextmanager
 async def startup(app: FastAPI):
     #make sure tmp_file_path exists
-    os.makedirs(tmp_file_path, exit_ok=True)
-
+    os.makedirs(TMP_FILE_PATH, exist_ok=True)
+    
     #register capabilities available with this api
     async with httpx.AsyncClient() as client:
+        client.headers.update({"Authorization": GO_LIVEPEER_SECRET})
         cap_hdr = {
-                   "name":capability, 
-                   "description":capability_desc,
-                   "url":capability_url,
-                   "capacity": capability_capacity,
-                   "price": capability_price
+                   "name": CAPABILITY, 
+                   "description":CAPABILITY_DESC,
+                   "url": CAPABILITY_URL,
+                   "capacity": CAPABILITY_CAPACITY,
+                   "price": CAPABILITY_PRICE
                   }
-        client.headers.update({"Livepeer-Job-Register-Capabilities":json.dumps(cap_hdr)})
-        resp = await client.post(go_livepeer_url+"/registercapability")
+        client.headers.update({"Livepeer-Job-Register-Capability":json.dumps(cap_hdr)})
+        resp = await client.post(GO_LIVEPEER_URL+"/registerCapability")
         if resp.status_code == 200:
            print("capability registered with go-livepeer")
         else:
            print("error: capability not registered "+str(resp.status_code))
+    
+    yield
+    
+#start api
+app = FastAPI(lifespan=startup)
 
+@app.get("/ok")
+async def ok():
+    return {"status":"ok"}
+    
 @app.post("/process")
 async def generate_video(livepeer_job: Annotated[str | None, Header()] = None, request_data: UploadFile | None = None):
     #setup stable video diffusion pipeline
     pipe = StableVideoDiffusionPipeline.from_pretrained(
         "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
     )
+    pipe = pipe.to(GPU)
     pipe.enable_model_cpu_offload()
 
     #setup process
@@ -88,7 +99,7 @@ async def generate_video(livepeer_job: Annotated[str | None, Header()] = None, r
 
         frames = pipe(image, decode_chunk_size=8, generator=generator).frames[0]
         
-        output_file = tmp_file_path+"/"+job["id"]+".mp4"
+        output_file = TMP_FILE_PATH+"/"+job["id"]+".mp4"
         export_to_video(frames, output_file, fps=fps)
         
         #https://fastapi.tiangolo.com/advanced/custom-response/#fileresponse
