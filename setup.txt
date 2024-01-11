@@ -1,0 +1,15 @@
+- 
+- need lets encrypt SSL cert to get requests directly to orchestrator
+  - this needed go-livepeer code update to not generate cert/key with every startup
+  - commands
+      //install certbot
+      sudo apt-get install certbot
+      sudo certbot certonly --manual --preferred-challenges dns -d "*.{DOMAIN}"
+      //now set the TXT record on dns and verify with https://mxtoolbox.com/txtlookup.aspx
+      //create symlink to go-livepeer install path for certs created
+      cd [path to go-livepeer datadir]
+      rm cert.pem key.pem
+      cp [path to letsencrypt cert] ./cert.pem
+      cp [path to letsencrypt key] ./key.pem
+      chown [user]:[user] cert.pem
+      chown [user]:[user] key.pem

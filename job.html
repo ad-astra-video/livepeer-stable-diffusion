@@ -1,0 +1,456 @@
+<html>
+    <head>
+        <script>
+            
+        </script>
+        
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+        <script src='https://cdn.jsdelivr.net/npm/big.js@6.2.1/big.min.js'></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col">
+                    <input class="btn btn-success" type="button" value="Connect Wallet" onclick="connect();">
+                    <span id="wallet">...</span>
+                </div>
+            </div>            
+            <div class="row">
+                <div class="col form-inline">
+                    <label for="orchUrl">Orchestrator Url</label>
+                    <input type="text" class="form-control" id="orchUrl" value="https://svd.ad-astra.video:9935">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col form-inline">
+                    <label for="maxPrice">Max Price Per Pixel</label>
+                    <input type="number" min-step=1 class="form-control" id="maxPrice" value=100>
+                </div>
+            </div>
+            <form id="jobForm">
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Stable Video Diffusion</h5>
+                        <div class="form-group form-inline">
+                            <div class="row">
+                                <div class="col">
+                                    <label class="form-label" for="baseImage">Select Image</label>
+                                    <input type="file" class="form-control" id="baseImage" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm">
+                                    <label for="fps">fps</label>
+                                    <input type="number" min=1 step=1 class="form-control" id="fps" value=25>
+                                </div>
+                                <div class="col-sm">
+                                    <label for="size">size</label>
+                                    <input type="text" class="form-control-plaintext" id="size" value="1024x512" readonly>
+                                </div>
+                                <div class="col-sm">
+                                    <label for="size">length (seconds)</label>
+                                    <input type="text" class="form-control-plaintext" id="length" value="2" readonly>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm">
+                                    <label for="seed">seed</label>
+                                    <input type="number" min=-1 step=1 class="form-control" id="seed" value=-1>
+                                </div>
+                            </div>
+                            <div class="row">
+                                
+                            </div>
+                            <div class="row">
+                                <div class="col-sm">
+                                    <label for="motion_bucket_id">motion bucket</label>
+                                    <input type="number" min=1 step=1 class="form-control" id="motion_bucket_id" value=180>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm">
+                                    <label for="noise_aug_strength">noise aug strength</label>
+                                    <input type="number" min=0 step=0.01 class="form-control" id="noise_aug_strength" value=.1>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block mb-4">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="modal" id="ticket">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h5 class="modal-title">Livepeer Ticket</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Hash</span>
+                                  <div class="form-floating">
+                                    <input type="text" readonly class="form-control-plaintext" id="ticket_hash" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Nonce</span>
+                                  <div class="form-floating">
+                                    <input type="text" class="form-control" id="sender_nonce" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Sender</span>
+                                  <div class="form-floating">
+                                    <input type="text" class="form-control" id="sender_address" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Recipient</span>
+                                  <div class="form-floating">
+                                    <input type="text" class="form-control" id="rcipient_address" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Face Value</span>
+                                  <div class="form-floating">
+                                    <input type="text" class="form-control" id="face_value" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Recipient Rand Hash</span>
+                                  <div class="form-floating">
+                                    <input type="text" class="form-control" id="recipient_rand_hash" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Creation Round</span>
+                                  <div class="form-floating">
+                                    <input type="text" class="form-control" id="creation_round" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                  <span class="input-group-text">Creation Round Block Hash</span>
+                                  <div class="form-floating">
+                                    <input type="text" class="form-control" id="creation_round_block_hash" placeholder="">
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    
+    <script>
+        var web3;
+        var accounts;
+        var livepeerJob = "Stable Video Diffusion On Livepeer";
+        let maxWinProb = BigInt(2 ** 256) - BigInt(1);
+
+        var eth_acct;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const jobForm = document.getElementById("jobForm");
+            jobForm.addEventListener("submit", requestJob);
+            
+            
+        }, false);
+        
+        async function connect() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+                                .catch((err) => {
+                                  if (err.code === 4001) {
+                                    // EIP-1193 userRejectedRequest error
+                                    // If this happens, the user rejected the connection request.
+                                    console.log('Please connect to MetaMask.');
+                                  } else {
+                                    console.error(err);
+                                  }
+                                });
+                const account = accounts[0];
+                const wallet = document.getElementById("wallet");
+                wallet.innerHTML = account;
+            } else {
+                console.log("No wallet");
+            }
+        }
+        
+        async function requestJob(event) {
+            event.preventDefault();
+            const data = new FormData(event.target);
+            console.log(event.target[1].value);
+            var sig = await SignAddr();
+            if (!sig) {
+                return
+            }
+            
+            
+            //get token for job
+            const orch_url = document.getElementById("orchUrl").value;
+            const resp = await fetch(orch_url+"/getToken", {
+                                    method: "GET",
+                                    headers: {"Content-Type": "application/json",
+                                              "Livepeer-Job-Eth-Address": 
+                                                    JSON.stringify({"addr": accounts[0],
+                                                     "sig": sig,
+                                                     "msg": livepeerJob,
+                                                    }),
+                                              "Livepeer-Job-Capability": "stable-video-diffusion",
+                                             },
+                                    });
+            
+            if (resp.status != 200) {
+                alert("failed to get token: "+resp.statusText);
+                return
+            }
+            
+            var token = await resp.json();
+            //console.log(token);
+            
+            if ("ticketParams" in token) {
+                validated = await validateTicketParams(token["ticketParams"]);
+                if (!validated) {
+                    console.log("ticket params validation failed, exiting");
+                    return
+                }
+            } else {
+                console.log("no ticket params in token, exiting");
+                return
+            }
+            
+            
+            const ticket = createTicket(token["ticketParams"]);
+            const hash = hashTicket(ticket);
+            //console.log(hash);
+            
+            let payment = {};
+            payment["sender"] = accounts[0];
+            payment["expected_price"] = token["priceInfo"];
+            payment["ticket_params"] = token["ticketParams"];
+            payment["expiration_params"] = token["ticketParams"]["expiration_params"];
+            
+            var job = {};
+            job["request"] = "stable-video-diffusion";
+            job["parameters"] = JSON.stringify({"seed": data["seed"],
+                                                 "fps": data["fps"],
+                                                 "motion_bucket_id": data["motion_bucket_id"],
+                                                 "noise_aug_strength": data["noise_aug_strength"]
+                                               });
+        }
+        
+        async function isArbitrum() {
+            if (window.ethereum) {
+                const chain_id = await window.ethereum.request({
+                  method: 'eth_chainId'
+                });
+                //if not arbitrum
+                if (chain_id != "0xa4b1") {
+                    console.log("confirmed on arbitrum");
+                    return true;
+                }
+            }
+            
+            //no ethereum or not on arbitrum
+            return false;
+        }
+        
+        async function changeToArbitrum() {
+            const res = await window.ethereum.request({
+                              "method": "wallet_switchEthereumChain",
+                              "params": [
+                                          {
+                                            "chainId": "0x64"
+                                          }
+                                        ]
+                        });
+            
+            if (res != null) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+        
+        async function SignAddr() {
+            if (window.ethereum) {
+                if (!isArbitrum()) {
+                    if (!changeToArbitrum()) {
+                        alert("need to be on Arbitrum network");
+                        return
+                    }
+                }
+                accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+                
+                try {
+                    const msg = `${livepeerJob}`;
+                    //const sig = await web3.eth.sign(msg, accounts[0]);
+                    const sig = await window.ethereum.request({
+                      method: 'personal_sign',
+                      params: [msg, accounts[0]]
+                    });
+                    
+                    return sig;
+                    
+                } catch (error) {
+                    console.log({
+                      error
+                    });
+                    return null
+                }
+            } else {
+                alert("no eth account accessible");
+                console.log("No metamask detected");
+                return null
+            }
+        }
+        
+        async function validateTicketParams(params) {
+            
+            let latestL1Block = await getLatestL1Block();
+            
+            if ("expiration_block" in params) {
+                let expBlock = parseBigInt(params["expiration_block"]);
+                console.log(expBlock);
+                if (expBlock <= 0) {
+                    console.log("ticket params validation failed: expiration block not > 0");
+                    return false
+                } else if (expBlock <= latestL1Block) {
+                    console.log("ticket params validation failed: expiration block ["+expBlock+"] < last seen L1 block ["+latestL1Block+"]");
+                    return false
+                }
+            } else {
+                console.log("ticket params validation failed: expiration block not present");
+                return false
+            }
+            if ("win_prob" in params && "face_value" in params) {
+                let winProb = parseBigInt(params["win_prob"])
+                let faceValue = parseBigInt(params["face_value"])
+                if (winProb > 0 && faceValue > 0) {
+                    let prob = 1 / (Number(maxWinProb / winProb));
+                    let ev = Number(faceValue) * prob;
+                    if (ev <= 0) {
+                        console.log("ticket params validation failed: ev <= 0");
+                        return false
+                    }
+                }
+            } else {
+                return false
+            }
+            
+            return true
+            
+        }
+        
+        async function getLatestL1Block() {
+            let res = await web3.currentProvider.send({
+                                method: "eth_getBlockByNumber",
+                                params: ["latest", false],
+                                jsonrpc: "2.0",
+                                id: new Date().getTime()
+                            },  function (error, result) {
+                                    if (error) {
+                                        console.log(error);
+                                        return 0
+                                    }
+                                    if (result) {
+                                        console.log(result);
+                                        return BigInt(result["result"]["l1BlockNumber"])
+                                    }
+                                    
+                            });
+            return res
+        }
+        
+        function parseBase64(b64str) {
+            const binaryString = atob(b64str);
+            // Convert binary to bytes array
+            const bytesArray = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                  bytesArray[i] = binaryString.charCodeAt(i);
+                }
+                
+            return '0x' + Array.from(bytesArray, byte => byte.toString(16).padStart(2, '0')).join('')
+        }
+        
+        function parseBigInt(b64str) {
+            let b = parseBase64(b64str);
+                    
+            return BigInt(b);
+        };
+        
+        function showTicketInfo(ticket) {
+            var ticketInfo = document.getElementById("");
+        }
+        
+        function createTicket(params, nonce) {
+            const t = {
+              Recipient: parseBase64(params["recipient"]),
+              Sender: accounts[0],
+              FaceValue: parseBigInt(params["face_value"]),
+              WinProb: parseBigInt(params["win_prob"]),
+              SenderNonce: BigInt(nonce),
+              RecipientRandHash: parseBase64(params["recipient_rand_hash"]),
+              AuxData: { 
+                         CreationRound: BigInt(params["expiration_params"]["creation_round"]),
+                         CreationRoundBlockHash: parseBase64(params["expiration_params"]["creation_round_block_hash"]),
+                       },
+            };
+            
+            return t
+        }
+        
+        function hashTicket(ticket) {
+            console.log(ticket);
+            //const flatten = flattenTicket(ticket);
+            //return web3.util.sha3(buf);
+            return web3.utils.soliditySha3({t: 'address', v: ticket.Recipient}, 
+                                           {t: 'address', v: ticket.Sender}, 
+                                           {t: 'uint256', v: ticket.FaceValue}, 
+                                           {t: 'uint256', v: ticket.WinProb}, 
+                                           {t: 'uint256', v: ticket.SenderNonce}, 
+                                           ticket.RecipientRandHash,
+                                           {t: 'uint256', v: ticket.AuxData.CreationRound},
+                                           ticket.AuxData.CreationRoundBlockHash);
+            
+        }
+        
+    </script>
+<html>
