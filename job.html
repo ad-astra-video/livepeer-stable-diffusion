@@ -25,8 +25,8 @@
             </div>
             <div class="row">
                 <div class="col form-inline">
-                    <label for="maxPrice">Max Price Per Pixel</label>
-                    <input type="number" min-step=1 class="form-control" id="maxPrice" value=100>
+                    <label for="max_price">Max Price Per Pixel</label>
+                    <input type="number" min-step=1 class="form-control" id="max_price" value=100>
                 </div>
             </div>
             <form id="jobForm">
@@ -36,8 +36,8 @@
                         <div class="form-group form-inline">
                             <div class="row">
                                 <div class="col">
-                                    <label class="form-label" for="baseImage">Select Image</label>
-                                    <input type="file" class="form-control" id="baseImage" />
+                                    <label class="form-label" for="base_image">Select Image</label>
+                                    <input type="file" class="form-control" id="base_image" />
                                 </div>
                             </div>
                             <div class="row">
@@ -47,7 +47,7 @@
                                 </div>
                                 <div class="col-sm">
                                     <label for="size">size</label>
-                                    <input type="text" class="form-control-plaintext" id="size" value="1024x512" readonly>
+                                    <input type="text" class="form-control-plaintext" id="size" value="1024x576" readonly>
                                 </div>
                                 <div class="col-sm">
                                     <label for="size">length (seconds)</label>
@@ -253,7 +253,8 @@
                 console.log("no ticket params in token, exiting");
                 return
             }
-            
+
+
             
             const ticket = createTicket(token["ticketParams"]);
             const hash = hashTicket(ticket);
@@ -280,7 +281,7 @@
                   method: 'eth_chainId'
                 });
                 //if not arbitrum
-                if (chain_id != "0xa4b1") {
+                if (chain_id == "0xa4b1") {
                     console.log("confirmed on arbitrum");
                     return true;
                 }
