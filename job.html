@@ -265,11 +265,11 @@
             job["dataHash"] = fileHash;
             job["capability"] = "stable-video-diffusion";
             job["prompt"] = "stable-video-diffusion";
-            job["parameters"] = {"seed": data.get("seed"),
-                                  "fps": data.get("fps"),
-                                  "motion_bucket_id": data.get("motion_bucket_id"),
-                                  "noise_aug_strength": data.get("noise_aug_strength")
-                                };
+            job["parameters"] = JSON.stringify({"seed": data.get("seed"),
+                                                "fps": data.get("fps"),
+                                                "motion_bucket_id": data.get("motion_bucket_id"),
+                                                "noise_aug_strength": data.get("noise_aug_strength")
+                                              });
             job["sig"] = await signRequest(job);
             
             let base_image_files = document.getElementById("base_image").files;
@@ -281,8 +281,8 @@
                 let process_resp = await fetch(orch_url+"/processJob", {
                                                 method: "POST",
                                                 headers: {
-                                                          "Livepeer-Job-Payment": JSON.stringify(payment),
-                                                          "Livepeer-Job": JSON.stringify(job),
+                                                          "Livepeer-Job-Payment": btoa(JSON.stringify(payment)),
+                                                          "Livepeer-Job": btoa(JSON.stringify(job)),
                                                          },
                                                 body: job_data,
                                                 });
@@ -391,7 +391,7 @@
         }
         
         async function signRequest(job) {
-            var reqHash = web3.utils.soliditySha3(JSON.stringify(job));
+            var reqHash = web3.utils.soliditySha3(btoa(JSON.stringify(job)));
             try {
                 const msg = `${reqHash}`;
                 const sig = await window.ethereum.request({
