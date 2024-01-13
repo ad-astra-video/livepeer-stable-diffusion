@@ -7,7 +7,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-        <script src='https://cdn.jsdelivr.net/npm/big.js@6.2.1/big.min.js'></script>
+        <script src="https://cdn.jsdelivr.net/npm/big.js@6.2.1/big.min.js"></script>
     </head>
     <body>
         <div class="container">
@@ -43,21 +43,21 @@
                             <div class="row">
                                 <div class="col-sm">
                                     <label for="fps">fps</label>
-                                    <input type="number" min=1 step=1 class="form-control" id="fps" value=25>
+                                    <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value=25>
                                 </div>
                                 <div class="col-sm">
                                     <label for="size">size</label>
-                                    <input type="text" class="form-control-plaintext" id="size" value="1024x576" readonly>
+                                    <input type="text" class="form-control-plaintext" name="size" id="size" value="1024x576" readonly>
                                 </div>
                                 <div class="col-sm">
-                                    <label for="size">length (seconds)</label>
-                                    <input type="text" class="form-control-plaintext" id="length" value="2" readonly>
+                                    <label for="size">duration (seconds)</label>
+                                    <input type="text" class="form-control-plaintext" name="dur" id="dur" value="2" readonly>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-sm">
                                     <label for="seed">seed</label>
-                                    <input type="number" min=-1 step=1 class="form-control" id="seed" value=-1>
+                                    <input type="number" min=-1 step=1 class="form-control" name="seed" id="seed" value=-1>
                                 </div>
                             </div>
                             <div class="row">
@@ -66,13 +66,13 @@
                             <div class="row">
                                 <div class="col-sm">
                                     <label for="motion_bucket_id">motion bucket</label>
-                                    <input type="number" min=1 step=1 class="form-control" id="motion_bucket_id" value=180>
+                                    <input type="number" min=1 step=1 class="form-control" name="motion_bucket_id" id="motion_bucket_id" value=180>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-sm">
                                     <label for="noise_aug_strength">noise aug strength</label>
-                                    <input type="number" min=0 step=0.01 class="form-control" id="noise_aug_strength" value=.1>
+                                    <input type="number" min=0 step=0.01 class="form-control" name="noise_aug_strength" id="noise_aug_strength" value=.1>
                                 </div>
                             </div>
                         </div>
@@ -182,9 +182,9 @@
         let maxWinProb = BigInt(2 ** 256) - BigInt(1);
 
         var eth_acct;
+        const jobForm = document.getElementById("jobForm");
         
         document.addEventListener('DOMContentLoaded', function() {
-            const jobForm = document.getElementById("jobForm");
             jobForm.addEventListener("submit", requestJob);
             
             
@@ -213,8 +213,7 @@
         
         async function requestJob(event) {
             event.preventDefault();
-            const data = new FormData(event.target);
-            console.log(event.target[1].value);
+            const data = new FormData(jobForm);
             var sig = await SignAddr();
             if (!sig) {
                 return
@@ -223,7 +222,7 @@
             
             //get token for job
             const orch_url = document.getElementById("orchUrl").value;
-            const resp = await fetch(orch_url+"/getToken", {
+            let resp = await fetch(orch_url+"/getToken", {
                                     method: "GET",
                                     headers: {"Content-Type": "application/json",
                                               "Livepeer-Job-Eth-Address": 
@@ -240,8 +239,8 @@
                 return
             }
             
-            var token = await resp.json();
-            //console.log(token);
+            const token = await resp.json();
+            console.log(token);
             
             if ("ticketParams" in token) {
                 validated = await validateTicketParams(token["ticketParams"]);
@@ -253,26 +252,71 @@
                 console.log("no ticket params in token, exiting");
                 return
             }
-
-
             
-            const ticket = createTicket(token["ticketParams"]);
-            const hash = hashTicket(ticket);
-            //console.log(hash);
+            const cost = calculateCost(data, token["priceInfo"]);
+            const tickets = createTickets(cost, token["ticketParams"]);
             
-            let payment = {};
-            payment["sender"] = accounts[0];
-            payment["expected_price"] = token["priceInfo"];
-            payment["ticket_params"] = token["ticketParams"];
-            payment["expiration_params"] = token["ticketParams"]["expiration_params"];
+            let payment = genPayment(token, accounts[0], tickets);
             
             var job = {};
+            job["id"] = token["jobId"];
+            job["capability"] = "stable-video-diffusion";
             job["request"] = "stable-video-diffusion";
-            job["parameters"] = JSON.stringify({"seed": data["seed"],
-                                                 "fps": data["fps"],
-                                                 "motion_bucket_id": data["motion_bucket_id"],
-                                                 "noise_aug_strength": data["noise_aug_strength"]
-                                               });
+            job["parameters"] = {"seed": data.get("seed"),
+                                  "fps": data.get("fps"),
+                                  "motion_bucket_id": data.get("motion_bucket_id"),
+                                  "noise_aug_strength": data.get("noise_aug_strength")
+                                };
+            
+            
+            let base_image_files = document.getElementById("base_image").files;
+            if (base_image_files.length > 0) {
+                let base_image = base_image_files[0];
+                let job_data = new FormData();
+                job_data.append("request_data", base_image);
+                
+                let process_resp = await fetch(orch_url+"/processJob", {
+                                                method: "POST",
+                                                headers: {
+                                                          "Livepeer-Job-Payment": JSON.stringify(payment),
+                                                          "Livepeer-Job": JSON.stringify(job),
+                                                         },
+                                                body: job_data,
+                                                });
+                console.log(resp.status);
+            } else {
+                alert("no base image selected, select image file and resubmit");
+            }
+        }
+        
+        function genPayment(token, sender, tickets) {
+            return {
+                "sender": sender,
+                "ticket_params": token["ticketParams"],
+                "expiration_params": token["ticketParams"]["expiration_params"],
+                "expected_price": token["priceInfo"],
+                "ticket_sender_params": tickets
+            }
+        }
+        
+        function calculateCost(data, priceInfo) {
+            const fps = data.get("fps");
+            const size = data.get("size").split("x");
+            const width = size[0];
+            const height = size[1];
+            const dur = data.get("dur");
+            
+            const pixels = BigInt(width) * BigInt(height) * BigInt(fps) * BigInt(dur);
+            const price = calcPrice(priceInfo);
+            
+            return pixels * price;
+        }
+        
+        function calcPrice(priceInfo) {
+            var p = BigInt(priceInfo["pricePerUnit"]);
+            var b = BigInt(priceInfo["pixelsPerUnit"]);
+            
+            return p / b;
         }
         
         async function isArbitrum() {
@@ -373,7 +417,7 @@
                     }
                 }
             } else {
-                return false
+                //orchestrator is not charging anything
             }
             
             return true
@@ -400,6 +444,74 @@
             return res
         }
         
+        function showTicketInfo(ticket) {
+            var ticketInfo = document.getElementById("");
+        }
+        
+        
+        function createTickets(cost, params) {
+            let t_params = parseTicketParams(params);
+            let ev = t_params.FaceValue * t_params.WinProb / maxWinProb;
+            let numTickets = 1;
+            if (cost > ev) {
+                numTickets = (cost / ev) + 1;
+            }
+            
+            let tickets = [];
+            for (t = 1; t <= numTickets; t++) {
+                let ticket = createTicket(t_params, t);
+                tickets.push(ticket);
+            }
+            
+            return tickets;
+        }
+        
+        function createTicket(params, nonce) {
+            
+            //create ticket to hash and send back {sender, hash}
+            const t = {
+              Recipient: params.Recipient,
+              Sender: accounts[0],
+              FaceValue: params.FaceValue,
+              WinProb: params.WinProb,
+              SenderNonce: BigInt(nonce),
+              RecipientRandHash: params.RecipientRandHash,
+              AuxData: { 
+                         CreationRound: params.CreationRound,
+                         CreationRoundBlockHash: params.CreationRoundBlockHash,
+                       },
+            };
+            
+            return {"senderNonce":nonce, "sig": hashTicket(t)}
+        }
+        
+        function hashTicket(ticket) {
+            console.log(ticket);
+            //const flatten = flattenTicket(ticket);
+            //return web3.util.sha3(buf);
+            return web3.utils.soliditySha3({t: 'address', v: ticket.Recipient}, 
+                                           {t: 'address', v: ticket.Sender}, 
+                                           {t: 'uint256', v: ticket.FaceValue}, 
+                                           {t: 'uint256', v: ticket.WinProb}, 
+                                           {t: 'uint256', v: ticket.SenderNonce}, 
+                                           ticket.RecipientRandHash,
+                                           {t: 'uint256', v: ticket.AuxData.CreationRound},
+                                           ticket.AuxData.CreationRoundBlockHash);
+            
+        }
+        
+        function parseTicketParams(params) {
+            return {
+              Recipient: parseBase64(params["recipient"]),
+              Sender: accounts[0],
+              FaceValue: parseBigInt(params["face_value"]),
+              WinProb: parseBigInt(params["win_prob"]),
+              RecipientRandHash: parseBase64(params["recipient_rand_hash"]),
+              CreationRound: BigInt(params["expiration_params"]["creation_round"]),
+              CreationRoundBlockHash: parseBase64(params["expiration_params"]["creation_round_block_hash"]),
+            };
+        }
+        
         function parseBase64(b64str) {
             const binaryString = atob(b64str);
             // Convert binary to bytes array
@@ -417,41 +529,7 @@
             return BigInt(b);
         };
         
-        function showTicketInfo(ticket) {
-            var ticketInfo = document.getElementById("");
-        }
         
-        function createTicket(params, nonce) {
-            const t = {
-              Recipient: parseBase64(params["recipient"]),
-              Sender: accounts[0],
-              FaceValue: parseBigInt(params["face_value"]),
-              WinProb: parseBigInt(params["win_prob"]),
-              SenderNonce: BigInt(nonce),
-              RecipientRandHash: parseBase64(params["recipient_rand_hash"]),
-              AuxData: { 
-                         CreationRound: BigInt(params["expiration_params"]["creation_round"]),
-                         CreationRoundBlockHash: parseBase64(params["expiration_params"]["creation_round_block_hash"]),
-                       },
-            };
-            
-            return t
-        }
-        
-        function hashTicket(ticket) {
-            console.log(ticket);
-            //const flatten = flattenTicket(ticket);
-            //return web3.util.sha3(buf);
-            return web3.utils.soliditySha3({t: 'address', v: ticket.Recipient}, 
-                                           {t: 'address', v: ticket.Sender}, 
-                                           {t: 'uint256', v: ticket.FaceValue}, 
-                                           {t: 'uint256', v: ticket.WinProb}, 
-                                           {t: 'uint256', v: ticket.SenderNonce}, 
-                                           ticket.RecipientRandHash,
-                                           {t: 'uint256', v: ticket.AuxData.CreationRound},
-                                           ticket.AuxData.CreationRoundBlockHash);
-            
-        }
         
     </script>
 <html>
