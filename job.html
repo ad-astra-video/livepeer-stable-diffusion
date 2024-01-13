@@ -259,8 +259,10 @@
             const payment = genPayment(token, accounts[0], tickets);
             
             var job = {};
+            
             job["id"] = token["jobId"];
-            job["token"] = token["token"]
+            job["token"] = token["token"];
+            job["dataHash"] = fileHash;
             job["capability"] = "stable-video-diffusion";
             job["prompt"] = "stable-video-diffusion";
             job["parameters"] = {"seed": data.get("seed"),
@@ -268,7 +270,7 @@
                                   "motion_bucket_id": data.get("motion_bucket_id"),
                                   "noise_aug_strength": data.get("noise_aug_strength")
                                 };
-            
+            job["sig"] = await signRequest(job);
             
             let base_image_files = document.getElementById("base_image").files;
             if (base_image_files.length > 0) {
@@ -367,7 +369,7 @@
                 
                 try {
                     const msg = `${livepeerJob}`;
-                    //const sig = await web3.eth.sign(msg, accounts[0]);
+                    //const msg = `${web3.utils.soliditySha3(accounts[0])}`;
                     const sig = await window.ethereum.request({
                       method: 'personal_sign',
                       params: [msg, accounts[0]]
@@ -384,6 +386,22 @@
             } else {
                 alert("no eth account accessible");
                 console.log("No metamask detected");
+                return null
+            }
+        }
+        
+        async function signRequest(job) {
+            var reqHash = web3.utils.soliditySha3(JSON.stringify(job));
+            try {
+                const msg = `${reqHash}`;
+                const sig = await window.ethereum.request({
+                                    method: 'personal_sign',
+                                    params: [msg, accounts[0]]
+                            });
+                return sig;
+                    
+            } catch (error) {
+                console.log(error);
                 return null
             }
         }
@@ -536,6 +554,7 @@
             const bytes = Array.from(new Uint8Array(hash));
             const hex = await web3.utils.bytesToHex(bytes);
             fileHash = hex;
+            console.log("file hashed: "+fileHash);
         }
         
     </script>
