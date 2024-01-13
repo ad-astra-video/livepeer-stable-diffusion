@@ -179,14 +179,15 @@
         var web3;
         var accounts;
         var livepeerJob = "Stable Video Diffusion On Livepeer";
+        var fileHash = "";
+        
         let maxWinProb = BigInt(2 ** 256) - BigInt(1);
-
-        var eth_acct;
-        const jobForm = document.getElementById("jobForm");
         
         document.addEventListener('DOMContentLoaded', function() {
             jobForm.addEventListener("submit", requestJob);
             
+            const fileLoader = document.getElementById("base_image");
+            fileLoader.addEventListener("change", hashFile);
             
         }, false);
         
@@ -255,13 +256,13 @@
             
             const cost = calculateCost(data, token["priceInfo"]);
             const tickets = createTickets(cost, token["ticketParams"]);
-            
-            let payment = genPayment(token, accounts[0], tickets);
+            const payment = genPayment(token, accounts[0], tickets);
             
             var job = {};
             job["id"] = token["jobId"];
+            job["token"] = token["token"]
             job["capability"] = "stable-video-diffusion";
-            job["request"] = "stable-video-diffusion";
+            job["prompt"] = "stable-video-diffusion";
             job["parameters"] = {"seed": data.get("seed"),
                                   "fps": data.get("fps"),
                                   "motion_bucket_id": data.get("motion_bucket_id"),
@@ -529,7 +530,13 @@
             return BigInt(b);
         };
         
-        
+        async function hashFile(event) {
+            const fileData = await event.target.files[0].arrayBuffer();
+            const hash = await crypto.subtle.digest("SHA-256", fileData);
+            const bytes = Array.from(new Uint8Array(hash));
+            const hex = await web3.utils.bytesToHex(bytes);
+            fileHash = hex;
+        }
         
     </script>
 <html>
