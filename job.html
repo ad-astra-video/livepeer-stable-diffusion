@@ -254,8 +254,10 @@
                 return
             }
             
+            //const ticketParams = parseTicketParams(token["ticketParams"]);
+            
             const cost = calculateCost(data, token["priceInfo"]);
-            const tickets = createTickets(cost, token["ticketParams"]);
+            const tickets = await createTickets(cost, token["ticketParams"]);
             const payment = genPayment(token, accounts[0], tickets);
             
             var job = {};
@@ -270,8 +272,11 @@
                                                 "motion_bucket_id": data.get("motion_bucket_id"),
                                                 "noise_aug_strength": data.get("noise_aug_strength")
                                               });
-            job["sig"] = await signRequest(job);
-            
+            var pmtHdr = btoa(JSON.stringify(payment)); //base64 encode
+            var jobHdr = btoa(JSON.stringify(job)); //base64 encode
+            var sigHdr = await signData(jobHdr);
+            //console.log(jobHdr);
+            console.log(sigHdr);
             let base_image_files = document.getElementById("base_image").files;
             if (base_image_files.length > 0) {
                 let base_image = base_image_files[0];
@@ -281,20 +286,22 @@
                 let process_resp = await fetch(orch_url+"/processJob", {
                                                 method: "POST",
                                                 headers: {
-                                                          "Livepeer-Job-Payment": btoa(JSON.stringify(payment)),
-                                                          "Livepeer-Job": btoa(JSON.stringify(job)),
+                                                          "Livepeer-Job-Payment": pmtHdr,
+                                                          "Livepeer-Job": jobHdr,
+                                                          "Livepeer-Job-Sig": sigHdr,
                                                          },
                                                 body: job_data,
                                                 });
-                console.log(resp.status);
+                console.log(process_resp.status);
             } else {
                 alert("no base image selected, select image file and resubmit");
             }
         }
         
         function genPayment(token, sender, tickets) {
+            var parsedParams = parseTicketParams(token["ticketParams"]);
             return {
-                "sender": sender,
+                "sender": toB64(sender),
                 "ticket_params": token["ticketParams"],
                 "expiration_params": token["ticketParams"]["expiration_params"],
                 "expected_price": token["priceInfo"],
@@ -368,19 +375,18 @@
                 });
                 
                 try {
-                    const msg = `${livepeerJob}`;
+                    const msg = web3.utils.utf8ToHex(livepeerJob);
+                    //const msg = web3.utils.utf8ToHex(web3.utils.sha3(accounts[0]));
                     //const msg = `${web3.utils.soliditySha3(accounts[0])}`;
-                    const sig = await window.ethereum.request({
-                      method: 'personal_sign',
-                      params: [msg, accounts[0]]
-                    });
-                    
+                    //const sig = await window.ethereum.request({
+                    //  method: 'personal_sign',
+                    //  params: [msg, accounts[0]]
+                    //});
+                    const sig = await web3.eth.personal.sign(msg, accounts[0],'');
                     return sig;
                     
                 } catch (error) {
-                    console.log({
-                      error
-                    });
+                    console.log(error);
                     return null
                 }
             } else {
@@ -390,8 +396,10 @@
             }
         }
         
-        async function signRequest(job) {
-            var reqHash = web3.utils.soliditySha3(btoa(JSON.stringify(job)));
+        async function signData(data) {
+            //hash base64 encoded job details and payment
+            var reqHash = web3.utils.soliditySha3(data);
+            console.log("signing data hash of: "+reqHash);
             try {
                 const msg = `${reqHash}`;
                 const sig = await window.ethereum.request({
@@ -412,7 +420,6 @@
             
             if ("expiration_block" in params) {
                 let expBlock = parseBigInt(params["expiration_block"]);
-                console.log(expBlock);
                 if (expBlock <= 0) {
                     console.log("ticket params validation failed: expiration block not > 0");
                     return false
@@ -468,7 +475,7 @@
         }
         
         
-        function createTickets(cost, params) {
+        async function createTickets(cost, params) {
             let t_params = parseTicketParams(params);
             let ev = t_params.FaceValue * t_params.WinProb / maxWinProb;
             let numTickets = 1;
@@ -478,15 +485,14 @@
             
             let tickets = [];
             for (t = 1; t <= numTickets; t++) {
-                let ticket = createTicket(t_params, t);
+                let ticket = await createTicket(t_params, t);
                 tickets.push(ticket);
             }
             
             return tickets;
         }
         
-        function createTicket(params, nonce) {
-            
+        async function createTicket(params, nonce) {
             //create ticket to hash and send back {sender, hash}
             const t = {
               Recipient: params.Recipient,
@@ -496,19 +502,17 @@
               SenderNonce: BigInt(nonce),
               RecipientRandHash: params.RecipientRandHash,
               AuxData: { 
-                         CreationRound: params.CreationRound,
-                         CreationRoundBlockHash: params.CreationRoundBlockHash,
+                         CreationRound: params.ExpirationParams.CreationRound,
+                         CreationRoundBlockHash: params.ExpirationParams.CreationRoundBlockHash,
                        },
             };
-            
-            return {"senderNonce":nonce, "sig": hashTicket(t)}
+            let sig = await signTicket(t);
+            return {"sender_nonce":nonce, "sig": sig}
         }
         
-        function hashTicket(ticket) {
-            console.log(ticket);
-            //const flatten = flattenTicket(ticket);
-            //return web3.util.sha3(buf);
-            return web3.utils.soliditySha3({t: 'address', v: ticket.Recipient}, 
+        async function hashTicket(ticket) {
+            //console.log(ticket);
+            const hash = await web3.utils.soliditySha3({t: 'address', v: ticket.Recipient}, 
                                            {t: 'address', v: ticket.Sender}, 
                                            {t: 'uint256', v: ticket.FaceValue}, 
                                            {t: 'uint256', v: ticket.WinProb}, 
@@ -516,19 +520,42 @@
                                            ticket.RecipientRandHash,
                                            {t: 'uint256', v: ticket.AuxData.CreationRound},
                                            ticket.AuxData.CreationRoundBlockHash);
-            
+            return hash
+        }
+        
+        async function signTicket(ticket) {
+            const hash = await hashTicket(ticket);
+            const sig = await web3.eth.personal.sign(hash, accounts[0],'');
+            console.log("signed ticket hash of: "+sig);
+            return sig;
         }
         
         function parseTicketParams(params) {
             return {
+              ExpirationBlock: parseBigInt(params["expiration_block"]),
+              ExpirationParams: {
+                                 CreationRound: BigInt(params["expiration_params"]["creation_round"]),
+                                 CreationRoundBlockHash: parseBase64(params["expiration_params"]["creation_round_block_hash"])
+                                },
               Recipient: parseBase64(params["recipient"]),
-              Sender: accounts[0],
               FaceValue: parseBigInt(params["face_value"]),
               WinProb: parseBigInt(params["win_prob"]),
               RecipientRandHash: parseBase64(params["recipient_rand_hash"]),
-              CreationRound: BigInt(params["expiration_params"]["creation_round"]),
-              CreationRoundBlockHash: parseBase64(params["expiration_params"]["creation_round_block_hash"]),
+              Seed: parseBase64(params["seed"]),
             };
+        }
+        
+        function toB64(hexString) {
+            // Remove the '0x' prefix and convert the hex string to bytes array
+            const hexBytes = hexString.slice(2).match(/.{2}/g).map(byte => parseInt(byte, 16));
+
+            // Convert bytes array to binary string
+            const binaryString = String.fromCharCode(...hexBytes);
+
+            // Convert binary string to base64
+            const base64String = btoa(binaryString);
+
+            return base64String;
         }
         
         function parseBase64(b64str) {
@@ -557,5 +584,23 @@
             console.log("file hashed: "+fileHash);
         }
         
+        
+        function hexToUtf8(s) {
+            return decodeURIComponent(
+               s.replace(/\s+/g, '') // remove spaces
+                .replace(/[0-9a-f]{2}/g, '%$&') // add '%' before each 2 characters
+            );
+        }
+
+        const utf8encoder = new TextEncoder();
+
+        function utf8ToHex(s) {
+            const rb = utf8encoder.encode(s);
+            let r = '';
+            for (const b of rb) {
+                r += ('0' + b.toString(16)).slice(-2);
+            }
+            return r;
+        }
     </script>
 <html>
