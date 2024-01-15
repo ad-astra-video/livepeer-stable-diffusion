@@ -451,7 +451,7 @@
         }
         
         async function getLatestL1Block() {
-            let res = await web3.currentProvider.send({
+            let res = await web3.currentProvider.request({
                                 method: "eth_getBlockByNumber",
                                 params: ["latest", false],
                                 jsonrpc: "2.0",
