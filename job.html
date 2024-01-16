@@ -272,11 +272,18 @@
                                                 "motion_bucket_id": data.get("motion_bucket_id"),
                                                 "noise_aug_strength": data.get("noise_aug_strength")
                                               });
-            var pmtHdr = btoa(JSON.stringify(payment)); //base64 encode
-            var jobHdr = btoa(JSON.stringify(job)); //base64 encode
-            var sigHdr = await signData(jobHdr);
-            //console.log(jobHdr);
-            console.log(sigHdr);
+            var pmtHdr = btoa(JSON.stringify(payment));
+            var jobHdr = btoa(JSON.stringify(job));
+            var jobSig = await signData(jobHdr);
+            
+            var sig = {};
+            sig["hash"] = web3.utils.sha3(jobHdr);
+            sig["sig"] = jobSig;
+            var test = await web3.eth.personal.ecRecover(sig["hash"], sig["sig"]);
+            console.log(test);
+            
+            var sigHdr = btoa(JSON.stringify(sig));
+            
             let base_image_files = document.getElementById("base_image").files;
             if (base_image_files.length > 0) {
                 let base_image = base_image_files[0];
@@ -397,15 +404,16 @@
         }
         
         async function signData(data) {
-            //hash base64 encoded job details and payment
-            var reqHash = web3.utils.soliditySha3(data);
+            //hash and sign hash of data
+            console.log("data being hashed for sig");
+            console.log(data);
+            var reqHash = web3.utils.soliditySha3({t:'string', v: data});
             console.log("signing data hash of: "+reqHash);
             try {
-                const msg = `${reqHash}`;
-                const sig = await window.ethereum.request({
-                                    method: 'personal_sign',
-                                    params: [msg, accounts[0]]
-                            });
+                //const msg = `${reqHash}`;
+                const msg = web3.utils.utf8ToHex(reqHash)
+                const sig = await web3.eth.personal.sign(msg, accounts[0],'')
+                console.log("sig: "+sig);
                 return sig;
                     
             } catch (error) {
