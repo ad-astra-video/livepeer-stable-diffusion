@@ -5,7 +5,7 @@
 #pip install httpx
 #pip install fastapi, uvicorn[standard]
 
-import sys, getopt, os, json, random
+import sys, getopt, os, json, random, logging
 
 #webapi imports
 from typing import Union, Annotated
@@ -19,6 +19,7 @@ import torch
 from diffusers import StableVideoDiffusionPipeline
 from diffusers.utils import load_image, export_to_video
 
+logging.basicConfig(level=logging.INFO)
 
 GO_LIVEPEER_URL = os.getenv("GO_LIVEPEER_URL","https://127.0.0.1:8935")
 GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
@@ -69,7 +70,9 @@ async def ok():
     
 @app.post("/process")
 async def generate_video(livepeer_job: Annotated[str | None, Header()] = None, request_data: UploadFile | None = None):
+    print(request.headers)
     #setup stable video diffusion pipeline
+    print("received request, loading model and running")
     pipe = StableVideoDiffusionPipeline.from_pretrained(
         "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
     )
@@ -80,9 +83,10 @@ async def generate_video(livepeer_job: Annotated[str | None, Header()] = None, r
     try:
         job = json.loads(livepeer_job)
         if "request" in job:
-            if job["request"] != "img2vid":
+            if job["prompt"] != "stable-video-diffusion":
                 raise HTTPException(status_code=400, detail="invalid job request, job type not supported")
-    except:
+    except Exception as e:
+       print(e)
        print("failed to parse job request")
        raise HTTPException(status_code=400, detail="invalid job request json in Livepeer-Job header")
     

@@ -264,6 +264,7 @@
             
             job["id"] = token["jobId"];
             job["token"] = token["token"];
+            job["timeoutSeconds"] = 120;
             job["dataHash"] = fileHash;
             job["capability"] = "stable-video-diffusion";
             job["prompt"] = "stable-video-diffusion";
@@ -279,8 +280,6 @@
             var sig = {};
             sig["hash"] = web3.utils.sha3(jobHdr);
             sig["sig"] = jobSig;
-            var test = await web3.eth.personal.ecRecover(sig["hash"], sig["sig"]);
-            console.log(test);
             
             var sigHdr = btoa(JSON.stringify(sig));
             
@@ -308,7 +307,7 @@
         function genPayment(token, sender, tickets) {
             var parsedParams = parseTicketParams(token["ticketParams"]);
             return {
-                "sender": toB64(sender),
+                "sender": encode(sender),
                 "ticket_params": token["ticketParams"],
                 "expiration_params": token["ticketParams"]["expiration_params"],
                 "expected_price": token["priceInfo"],
@@ -405,8 +404,8 @@
         
         async function signData(data) {
             //hash and sign hash of data
-            console.log("data being hashed for sig");
-            console.log(data);
+            //console.log("data being hashed for sig");
+            //console.log(data);
             var reqHash = web3.utils.soliditySha3({t:'string', v: data});
             console.log("signing data hash of: "+reqHash);
             try {
@@ -515,7 +514,7 @@
                        },
             };
             let sig = await signTicket(t);
-            return {"sender_nonce":nonce, "sig": sig}
+            return {"sender_nonce":nonce, "sig": encode(sig)}
         }
         
         async function hashTicket(ticket) {
@@ -533,7 +532,10 @@
         
         async function signTicket(ticket) {
             const hash = await hashTicket(ticket);
-            const sig = await web3.eth.personal.sign(hash, accounts[0],'');
+            //const msg = web3.utils.utf8ToHex(hash);
+            const msg = `${hash}`;
+            const sig = await web3.eth.personal.sign(msg, accounts[0],'');
+            console.log("ticket hash: "+hash);
             console.log("signed ticket hash of: "+sig);
             return sig;
         }
@@ -543,17 +545,17 @@
               ExpirationBlock: parseBigInt(params["expiration_block"]),
               ExpirationParams: {
                                  CreationRound: BigInt(params["expiration_params"]["creation_round"]),
-                                 CreationRoundBlockHash: parseBase64(params["expiration_params"]["creation_round_block_hash"])
+                                 CreationRoundBlockHash: decode(params["expiration_params"]["creation_round_block_hash"])
                                 },
-              Recipient: parseBase64(params["recipient"]),
+              Recipient: decode(params["recipient"]),
               FaceValue: parseBigInt(params["face_value"]),
               WinProb: parseBigInt(params["win_prob"]),
-              RecipientRandHash: parseBase64(params["recipient_rand_hash"]),
-              Seed: parseBase64(params["seed"]),
+              RecipientRandHash: decode(params["recipient_rand_hash"]),
+              Seed: decode(params["seed"]),
             };
         }
         
-        function toB64(hexString) {
+        function encode(hexString) {
             // Remove the '0x' prefix and convert the hex string to bytes array
             const hexBytes = hexString.slice(2).match(/.{2}/g).map(byte => parseInt(byte, 16));
 
@@ -566,7 +568,7 @@
             return base64String;
         }
         
-        function parseBase64(b64str) {
+        function decode(b64str) {
             const binaryString = atob(b64str);
             // Convert binary to bytes array
             const bytesArray = new Uint8Array(binaryString.length);
@@ -578,7 +580,7 @@
         }
         
         function parseBigInt(b64str) {
-            let b = parseBase64(b64str);
+            let b = decode(b64str);
                     
             return BigInt(b);
         };
@@ -592,23 +594,5 @@
             console.log("file hashed: "+fileHash);
         }
         
-        
-        function hexToUtf8(s) {
-            return decodeURIComponent(
-               s.replace(/\s+/g, '') // remove spaces
-                .replace(/[0-9a-f]{2}/g, '%$&') // add '%' before each 2 characters
-            );
-        }
-
-        const utf8encoder = new TextEncoder();
-
-        function utf8ToHex(s) {
-            const rb = utf8encoder.encode(s);
-            let r = '';
-            for (const b of rb) {
-                r += ('0' + b.toString(16)).slice(-2);
-            }
-            return r;
-        }
     </script>
 <html>
