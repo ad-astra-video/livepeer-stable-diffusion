@@ -5,21 +5,20 @@
 #pip install httpx
 #pip install fastapi, uvicorn[standard]
 
-import sys, getopt, os, json, random, logging
+import sys, getopt, os, json, random
 
 #webapi imports
 from typing import Union, Annotated
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Form, UploadFile, HTTPException, Header
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Header
 from fastapi.responses import FileResponse
 import httpx
 
 #stable video diffusion imports
-import torch
+import torch, PIL
 from diffusers import StableVideoDiffusionPipeline
 from diffusers.utils import load_image, export_to_video
 
-logging.basicConfig(level=logging.INFO)
 
 GO_LIVEPEER_URL = os.getenv("GO_LIVEPEER_URL","https://127.0.0.1:8935")
 GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
@@ -31,7 +30,7 @@ CAPABILITY_DESC = os.getenv("LIVEPEER_JOB_CAPABILITY_DESCRIPTION", "generate vid
 CAPABILITY_CAPACITY = os.getenv("LIVEPEER_JOB_CAPABILITY_CAPACITY", 1)
 CAPABILITY_PRICE = os.getenv("LIVEPEER_JOB_CAPABILITY_PRICE", "100/1")
 MODEL_PATH = os.getenv("MODEL_PATH", "models/stable-video-diffusion-img2vid-xt")
-TMP_FILE_PATH = os.getenv("TMP_FILE_PATH", "~/svd")
+TMP_FILE_PATH = os.getenv("TMP_FILE_PATH", "./data")
 
 
 #register capabilities available with this api
@@ -69,47 +68,51 @@ async def ok():
     return {"status":"ok"}
     
 @app.post("/process")
-async def generate_video(livepeer_job: Annotated[str | None, Header()] = None, request_data: UploadFile | None = None):
-    print(request.headers)
+async def generate_video(request_data: UploadFile | None = None, livepeer_job: Annotated[str | None, Header()] = None):
     #setup stable video diffusion pipeline
-    print("received request, loading model and running")
     pipe = StableVideoDiffusionPipeline.from_pretrained(
         "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
     )
     pipe = pipe.to(GPU)
+    #pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
     pipe.enable_model_cpu_offload()
+    pipe.unet.enable_forward_chunking()
+    decode_chunk_size = 2
 
     #setup process
     try:
         job = json.loads(livepeer_job)
-        if "request" in job:
-            if job["prompt"] != "stable-video-diffusion":
+        print(job)
+        if "capability" in job:
+            if job["capability"] != CAPABILITY:
                 raise HTTPException(status_code=400, detail="invalid job request, job type not supported")
     except Exception as e:
-       print(e)
-       print("failed to parse job request")
+       print("failed to parse job request "+str(e))
        raise HTTPException(status_code=400, detail="invalid job request json in Livepeer-Job header")
-    
-    with PIL.Image.open(base_image.file) as base:
+    #request_data.file
+
+    with PIL.Image.open(request_data.file) as base:
         image = load_image(base)
         image = image.resize((1024,576))
         #set parameters
-        seed = job["parameters"].get("seed",-1)
-        fps = job["parameters"].get("fps", 25)
-        motion_bucket_id = job["parameters"].get("motion_bucket_id", 180)
-        noise_aug_strength = job["parameters"].get("noise_aug_strength", 0.1)
-        
+        params = json.loads(job["parameters"])
+        seed = int(params.get("seed",-1))
+        fps = int(params.get("fps", 25))
+        motion_bucket_id = int(params.get("motion_bucket_id", 180))
+        noise_aug_strength = float(params.get("noise_aug_strength", 0.1))
+        duration = int(params.get("duration", 2))
+        num_frames = fps * duration
         generator = torch.manual_seed(seed)
 
-        frames = pipe(image, decode_chunk_size=8, generator=generator).frames[0]
+        frames = pipe(image, decode_chunk_size=decode_chunk_size, generator=generator, motion_bucket_id=motion_bucket_id, noise_aug_strength=noise_aug_strength, num_frames=num_frames).frames[0]
         
         output_file = TMP_FILE_PATH+"/"+job["id"]+".mp4"
+        print("saving output to: "+output_file)
         export_to_video(frames, output_file, fps=fps)
         
         #https://fastapi.tiangolo.com/advanced/custom-response/#fileresponse
-        return FileResponse(path=output_file, headers={"jobId":job["id"]})
-
-
+        return FileResponse(path=output_file, filename=job["id"]+".mp4", headers={"id":job["id"]})
+    
 @app.get("/status/{prompt_id")
 async def video_status():
     pass

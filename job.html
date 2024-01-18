@@ -11,77 +11,93 @@
     </head>
     <body>
         <div class="container">
-            <div class="row mb-5">
+            <div class="row">
                 <div class="col">
-                    <input class="btn btn-success" type="button" value="Connect Wallet" onclick="connect();">
-                    <span id="wallet">...</span>
-                </div>
-            </div>            
-            <div class="row">
-                <div class="col form-inline">
-                    <label for="orchUrl">Orchestrator Url</label>
-                    <input type="text" class="form-control" id="orchUrl" value="https://svd.ad-astra.video:9935">
-                </div>
-            </div>
-            <div class="row">
-                <div class="col form-inline">
-                    <label for="max_price">Max Price Per Pixel</label>
-                    <input type="number" min-step=1 class="form-control" id="max_price" value=100>
-                </div>
-            </div>
-            <form id="jobForm">
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h5 class="card-title">Stable Video Diffusion</h5>
-                        <div class="form-group form-inline">
-                            <div class="row">
-                                <div class="col">
-                                    <label class="form-label" for="base_image">Select Image</label>
-                                    <input type="file" class="form-control" id="base_image" />
-                                </div>
+                    <div class="container">
+                        <div class="row mb-5">
+                            <div class="col">
+                                <input class="btn btn-success" type="button" value="Connect Wallet" onclick="connect();">
+                                <span id="wallet">...</span>
                             </div>
-                            <div class="row">
-                                <div class="col-sm">
-                                    <label for="fps">fps</label>
-                                    <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value=25>
-                                </div>
-                                <div class="col-sm">
-                                    <label for="size">size</label>
-                                    <input type="text" class="form-control-plaintext" name="size" id="size" value="1024x576" readonly>
-                                </div>
-                                <div class="col-sm">
-                                    <label for="size">duration (seconds)</label>
-                                    <input type="text" class="form-control-plaintext" name="dur" id="dur" value="2" readonly>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm">
-                                    <label for="seed">seed</label>
-                                    <input type="number" min=-1 step=1 class="form-control" name="seed" id="seed" value=-1>
-                                </div>
-                            </div>
-                            <div class="row">
-                                
-                            </div>
-                            <div class="row">
-                                <div class="col-sm">
-                                    <label for="motion_bucket_id">motion bucket</label>
-                                    <input type="number" min=1 step=1 class="form-control" name="motion_bucket_id" id="motion_bucket_id" value=180>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm">
-                                    <label for="noise_aug_strength">noise aug strength</label>
-                                    <input type="number" min=0 step=0.01 class="form-control" name="noise_aug_strength" id="noise_aug_strength" value=.1>
-                                </div>
+                        </div>            
+                        <div class="row">
+                            <div class="col form-inline">
+                                <label for="orchUrl">Orchestrator Url</label>
+                                <input type="text" class="form-control" id="orchUrl" value="https://svd.ad-astra.video:9935">
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block mb-4">Submit</button>
+                        <div class="row">
+                            <div class="col form-inline">
+                                <label for="max_price">Max Price Per Pixel</label>
+                                <input type="number" min-step=1 class="form-control" id="max_price" value=100>
+                            </div>
+                        </div>
+                        <form id="jobForm">
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Stable Video Diffusion</h5>
+                                    <div class="form-group form-inline">
+                                        <div class="row">
+                                            <div class="col">
+                                                <label class="form-label" for="base_image">Select Image</label>
+                                                <input type="file" class="form-control" id="base_image" />
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <label class="form-label" for="timeoutSeconds">timeout</label>
+                                                <input type="number" min=1 step=1 class="form-control" name="timeoutSeconds" id="timeoutSeconds" value=600>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm">
+                                                <label for="fps">fps</label>
+                                                <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value=7>
+                                            </div>
+                                            <div class="col-sm">
+                                                <label for="size">size</label>
+                                                <input type="text" class="form-control-plaintext" name="size" id="size" value="1024x576" readonly>
+                                            </div>
+                                            <div class="col-sm">
+                                                <label for="size">duration (seconds)</label>
+                                                <input type="text" class="form-control-plaintext" name="dur" id="dur" value="2" readonly>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm">
+                                                <label for="seed">seed</label>
+                                                <input type="number" min=-1 step=1 class="form-control" name="seed" id="seed" value=-1>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm">
+                                                <label for="motion_bucket_id">motion bucket</label>
+                                                <input type="number" min=1 step=1 class="form-control" name="motion_bucket_id" id="motion_bucket_id" value=180>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm">
+                                                <label for="noise_aug_strength">noise aug strength</label>
+                                                <input type="number" min=0 step=0.01 class="form-control" name="noise_aug_strength" id="noise_aug_strength" value=.1>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-block mb-4">Submit</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            </form>
+                <div class="col">
+                    <!--<video width="854" height="480" id="sd_video" controls autoplay muted>
+                        <source></source>
+                    </video>-->
+                </div>
+            </div>
         </div>
-        
         <div class="modal" id="ticket">
             <div class="modal-dialog">
                 <div class="modal-header">
@@ -264,14 +280,15 @@
             
             job["id"] = token["jobId"];
             job["token"] = token["token"];
-            job["timeoutSeconds"] = 120;
+            job["timeoutSeconds"] = parseInt(data.get("timeoutSeconds"));
             job["dataHash"] = fileHash;
             job["capability"] = "stable-video-diffusion";
             job["prompt"] = "stable-video-diffusion";
-            job["parameters"] = JSON.stringify({"seed": data.get("seed"),
-                                                "fps": data.get("fps"),
+            job["parameters"] = JSON.stringify({"seed": parseInt(data.get("seed")),
+                                                "fps": parseInt(data.get("fps")),
                                                 "motion_bucket_id": data.get("motion_bucket_id"),
-                                                "noise_aug_strength": data.get("noise_aug_strength")
+                                                "noise_aug_strength": data.get("noise_aug_strength"),
+                                                "duration": data.get("dur")
                                               });
             var pmtHdr = btoa(JSON.stringify(payment));
             var jobHdr = btoa(JSON.stringify(job));
@@ -288,17 +305,31 @@
                 let base_image = base_image_files[0];
                 let job_data = new FormData();
                 job_data.append("request_data", base_image);
-                
+                //
                 let process_resp = await fetch(orch_url+"/processJob", {
-                                                method: "POST",
-                                                headers: {
-                                                          "Livepeer-Job-Payment": pmtHdr,
-                                                          "Livepeer-Job": jobHdr,
-                                                          "Livepeer-Job-Sig": sigHdr,
-                                                         },
-                                                body: job_data,
-                                                });
-                console.log(process_resp.status);
+                                            method: "POST",
+                                            headers: {
+                                                      "Livepeer-Job-Payment": pmtHdr,
+                                                      "Livepeer-Job": jobHdr,
+                                                      "Livepeer-Job-Sig": sigHdr,
+                                                     },
+                                            body: job_data,
+                                            });
+                // We are reading the *Content-Disposition* header for getting the original filename given from the server
+                const header = process_resp.headers.get('Content-Disposition');
+                const parts = header.split(';');
+                const filename = parts[1].split('=')[1].replaceAll("\"", "");
+                const blobData = await process_resp.blob();
+                var url = window.URL.createObjectURL(blobData);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+
+                //const vid = document.getElementById("sd_video");
+                //vid.src = url;
             } else {
                 alert("no base image selected, select image file and resubmit");
             }
@@ -592,6 +623,16 @@
             const hex = await web3.utils.bytesToHex(bytes);
             fileHash = hex;
             console.log("file hashed: "+fileHash);
+        }
+        
+        function playVideo(data){
+            var video = document.getElementById("sd_video");
+            //var binaryString = atob(base64String);
+            //var blob = new Blob([binaryString], {type: "video/mp4"});
+            //var blob = new Blob(data, {type: "video/mp4"});
+            //video.srcObject = window.URL.createObjectURL(blob);
+            var blob = new Blob(data, {type: "video/mp4"});
+            video.srcObject = window.URL.createObjectURL(blob);
         }
         
     </script>
