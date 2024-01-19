@@ -4,8 +4,8 @@ cd %~dp0
 echo starting sd-video-api
 
 REM set options
-SET RUN_FRONTEND=no
-SET RUN_PROCESSING=yes
+SET RUN_FRONTEND=yes
+SET RUN_PROCESSING=no
 
 REM setup environment
 REM set api/frontend host/port

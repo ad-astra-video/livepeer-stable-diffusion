@@ -30,7 +30,7 @@ CAPABILITY_CAPACITY = int(os.getenv("LIVEPEER_JOB_CAPABILITY_CAPACITY", 1))
 CAPABILITY_PRICE = os.getenv("LIVEPEER_JOB_CAPABILITY_PRICE", "1695421/1000")
 # not implemented yet (cached in .cache folder in home dir) MODEL_PATH = os.getenv("MODEL_PATH", "./models/stable-video-diffusion-img2vid-xt")
 DATA_PATH = os.getenv("DATA_PATH", "data")
-DECODE_SIZE = os.getenv("DECODE_SIZE", 1)
+DECODE_SIZE = int(os.getenv("DECODE_SIZE", 1))
 CHUNK_SIZE = 1024*1024
 
 #register capabilities available with this api
