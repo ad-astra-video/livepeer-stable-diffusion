@@ -2,3 +2,5 @@ venv
 __pycache__
 pyvenv.cfg
 /data
+start.sh
+start.bat
