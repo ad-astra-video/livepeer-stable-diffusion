@@ -3,6 +3,8 @@ REM change to this directory
 cd %~dp0
 echo starting sd-video-api
 
+SET RUN_PROCESSING=yes
+
 REM setup variables
 SET HOST=localhost
 SET PORT=9000

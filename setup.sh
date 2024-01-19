@@ -1,4 +1,5 @@
 sudo apt-get install pip
+sudo pip install pipenv
 pv=$(python3 --version)
 echo "python3 version installed: $pv"
 echo "tested with python 3.10.12, may need that version installed for all to work (y: continue, n: stop)"
@@ -7,9 +8,7 @@ if [ choice == "n" ]; then
   exit
 fi
 
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+pipenv install
 #pip install diffusers transformers accelerate python-multipart opencv-python
 #pip install httpx
 #pip install fastapi uvicorn[standard]

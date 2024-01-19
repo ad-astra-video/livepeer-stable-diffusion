@@ -16,9 +16,10 @@ import torch, PIL
 from diffusers import StableVideoDiffusionPipeline
 from diffusers.utils import load_image, export_to_video
 
-
+RUN_PROCESSING = os.getenv("RUN_PROCESSING", "yes")
 GO_LIVEPEER_URL = os.getenv("GO_LIVEPEER_URL","https://127.0.0.1:8935")
 GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
+
 
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 9000))
@@ -42,40 +43,40 @@ models = {}
 async def startup(app: FastAPI):
     #make sure DATA_PATH exists
     os.makedirs(DATA_PATH, exist_ok=True)
-    
-    print("loading models")
-    #setup stable video diffusion pipeline
-    pipe = StableVideoDiffusionPipeline.from_pretrained(
-        "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
-    )
-    pipe = pipe.to(GPU)
-    #pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
-    pipe.enable_model_cpu_offload()
-    pipe.unet.enable_forward_chunking()
-    
-    models[CAPABILITY] = pipe
-    
-    print("registering capability with go-livepeer")
-    #register capabilities available with this api
-    try:
-        async with httpx.AsyncClient() as client:
-            client.headers.update({"Authorization": GO_LIVEPEER_SECRET})
-            cap_hdr = {
-                       "name": CAPABILITY, 
-                       "description":CAPABILITY_DESC,
-                       "url": CAPABILITY_URL,
-                       "capacity": CAPABILITY_CAPACITY,
-                       "price": CAPABILITY_PRICE
-                      }
-            client.headers.update({"Livepeer-Job-Register-Capability":json.dumps(cap_hdr)})
-            resp = await client.post(GO_LIVEPEER_URL+"/registerCapability")
-            if resp.status_code == 200:
-               print("capability registered with go-livepeer")
-            else:
-               print("error: capability not registered "+str(resp.status_code))
-    except httpx.ConnectError:
-        print("failed to register capability, orchestrator not available")
-        return
+    if RUN_PROCESSING == "yes":
+        print("loading models")
+        #setup stable video diffusion pipeline
+        pipe = StableVideoDiffusionPipeline.from_pretrained(
+            "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
+        )
+        pipe = pipe.to(GPU)
+        #pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
+        pipe.enable_model_cpu_offload()
+        pipe.unet.enable_forward_chunking()
+        
+        models[CAPABILITY] = pipe
+        
+        print("registering capability with go-livepeer")
+        #register capabilities available with this api
+        try:
+            async with httpx.AsyncClient() as client:
+                client.headers.update({"Authorization": GO_LIVEPEER_SECRET})
+                cap_hdr = {
+                           "name": CAPABILITY, 
+                           "description":CAPABILITY_DESC,
+                           "url": CAPABILITY_URL,
+                           "capacity": CAPABILITY_CAPACITY,
+                           "price": CAPABILITY_PRICE
+                          }
+                client.headers.update({"Livepeer-Job-Register-Capability":json.dumps(cap_hdr)})
+                resp = await client.post(GO_LIVEPEER_URL+"/registerCapability")
+                if resp.status_code == 200:
+                   print("capability registered with go-livepeer")
+                else:
+                   print("error: capability not registered "+str(resp.status_code))
+        except httpx.ConnectError:
+            print("failed to register capability, orchestrator not available")
+            return
     
     yield
     
