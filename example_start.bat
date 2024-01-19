@@ -6,6 +6,7 @@ echo starting sd-video-api
 REM set options
 SET RUN_FRONTEND=yes
 SET RUN_PROCESSING=no
+SET GO_LIVEPEER_URL=https://127.0.0.1:9935
 
 REM setup environment
 REM set api/frontend host/port
@@ -15,7 +16,6 @@ SET SVD_PORT=9000
 REM backend processing setup
 REM check_cuda_devices.py to see ordering of GPUs
 SET SVD_GPU=cuda:0
-SET GO_LIVEPEER_URL=https://127.0.0.1:9935
 SET GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
 SET LIVEPEER_JOB_CAPABILITY=stable-video-diffusion
 SET LIVEPEER_JOB_CAPABILITY_DESCRIPTION=generate videos using stable-video-diffusion

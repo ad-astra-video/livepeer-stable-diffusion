@@ -92,7 +92,7 @@ templates = Jinja2Templates(directory="templates")
 async def svd(request: Request):
     if RUN_FRONTEND == "yes":
         return templates.TemplateResponse(
-            request=request, name="job.html", context={"id": ""}
+            request=request, name="job.html", context={"go_livepeer_url": GO_LIVEPEER_URL}
         )
     else:
         raise HTTPException(status_code=500, detail="frontend not available")
