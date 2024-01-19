@@ -5,8 +5,10 @@ py -3 -m ensurepip
 echo python3 version installed:
 python3 --version
 set /p "choice=tested with python 3.10.12, may need that version installed for all to work (y: continue, n: stop): "
-IF %choice% == "n" (
-  exit
+
+if "%choice%" == "n" (
+  echo exiting
+  exit /b 0
 )
 pip uninstall virtualenv -y
 pip uninstall pipenv -y
