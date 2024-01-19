@@ -1,29 +1,35 @@
 @ECHO OFF
+REM change to this directory
 cd %~dp0
-py -3 -m ensurepip
+echo starting sd-video-api
 
-echo python3 version installed:
-python3 --version
-set /p "choice=tested with python 3.10.12, may need that version installed for all to work (y: continue, n: stop): "
-IF %choice% == "n" (
-  exit
-)
-pip uninstall virtualenv -y
-pip uninstall pipenv -y
-pip install pipenv
-set /p "update=if received warning of update to path needed, add path in warning to environment variables and then close and re-run setup.bat (press enter if no warning received)"
+REM set options
+SET RUN_FRONTEND=yes
+SET RUN_PROCESSING=no
 
-pipenv install
-REM install packages in virtualenv with pipenv (auto creates virtualenv)
-REM pipenv uninstall torch torchaudio torchvision -y
-REM pipenv install torch torchvision torchaudio
-REM pipenv install diffusers transformers accelerate python-multipart opencv-python
-REM pipenv install httpx
-REM pipenv install fastapi uvicorn[standard]
+REM setup environment
+REM set api/frontend host/port
+SET SVD_HOST=localhost
+SET SVD_PORT=9000
 
-echo "installation complete!"
+REM backend processing setup
+REM check_cuda_devices.py to see ordering of GPUs
+SET SVD_GPU=cuda:0
+SET GO_LIVEPEER_URL=https://127.0.0.1:9935
+SET GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
+SET LIVEPEER_JOB_CAPABILITY=stable-video-diffusion
+SET LIVEPEER_JOB_CAPABILITY_DESCRIPTION=generate videos using stable-video-diffusion
+REM capability_url is url that is reachable by go-livepeer orchestrator. localhost would mean processing backend is ran on same machine as orchestrator
+SET LIVEPEER_JOB_CAPABILITY_URL=http://127.0.0.1:9000/process
+SET LIVEPEER_JOB_CAPABILITY_CAPACITY=1
+REM tried to set price = one 2s video = one ticket at 50gwei
+SET LIVEPEER_JOB_CAPABILITY_PRICE=100/1
+
+REM not implemented yet (cached in .cache folder in home dir) MODEL_PATH = os.getenv("MODEL_PATH", "./models/stable-video-diffusion-img2vid-xt")
+SET DATA_PATH=data
+SET DECODE_SIZE=1
+
+REM run the web server
+pipenv run python sd-video-api.py
+
 pause
-
-
-
-
