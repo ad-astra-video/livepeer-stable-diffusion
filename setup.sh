@@ -1,5 +1,5 @@
 sudo apt-get install pip
-sudo pip install pipenv
+pip install pipenv
 pv=$(python3 --version)
 echo "python3 version installed: $pv"
 echo "tested with python 3.10.12, may need that version installed for all to work (y: continue, n: stop)"
