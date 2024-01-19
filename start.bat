@@ -12,6 +12,7 @@ SET SVD_HOST=localhost
 SET SVD_PORT=9000
 
 REM backend processing setup
+REM check_cuda_devices.py to see ordering of GPUs
 SET SVD_GPU=cuda:0
 SET GO_LIVEPEER_URL=https://127.0.0.1:9935
 SET GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
