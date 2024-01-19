@@ -85,7 +85,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary btn-block mb-4">Submit</button>
+                                    <button type="submit" class="btn btn-primary btn-block mb-4" id="submit_job">Submit</button>
                                 </div>
                             </div>
                         </form>
@@ -230,6 +230,10 @@
         
         async function requestJob(event) {
             event.preventDefault();
+            //disable submit button
+            const submit_btn = document.getElementById("submit_job");
+            submit_btn.setAttribute("disabled", "disabled");
+            
             const data = new FormData(jobForm);
             var sig = await SignAddr();
             if (!sig) {
@@ -333,6 +337,9 @@
             } else {
                 alert("no base image selected, select image file and resubmit");
             }
+            
+            const submit_btn = document.getElementById("submit_job");
+            submit_btn.removeAttribute("disabled");
         }
         
         function genPayment(token, sender, tickets) {
