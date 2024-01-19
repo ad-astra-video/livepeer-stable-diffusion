@@ -5,8 +5,8 @@ echo "starting sd-video-api"
 export RUN_FRONTEND=no
 export RUN_PROCESSING=yes
 
-#set the env variables
-#front end setup
+#setup environment
+#set api/frontend host/port
 export SVD_HOST=localhost
 export SVD_PORT=9000
 #backend processing setup

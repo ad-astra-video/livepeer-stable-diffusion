@@ -7,9 +7,8 @@ REM set options
 SET RUN_FRONTEND=no
 SET RUN_PROCESSING=yes
 
-REM setup variables
-
-REM front end setup
+REM setup environment
+REM set api/frontend host/port
 SET SVD_HOST=localhost
 SET SVD_PORT=9000
 
