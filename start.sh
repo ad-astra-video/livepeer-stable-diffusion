@@ -1,6 +1,8 @@
 #!/bin/bash
 echo "starting sd-video-api"
 
+#set options
+export RUN_FRONTEND=no
 export RUN_PROCESSING=yes
 
 #set the env variables

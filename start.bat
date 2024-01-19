@@ -3,6 +3,8 @@ REM change to this directory
 cd %~dp0
 echo starting sd-video-api
 
+REM set options
+SET RUN_FRONTEND=no
 SET RUN_PROCESSING=yes
 
 REM setup variables
