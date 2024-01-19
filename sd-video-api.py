@@ -17,15 +17,13 @@ from diffusers import StableVideoDiffusionPipeline
 from diffusers.utils import load_image, export_to_video
 
 RUN_PROCESSING = os.getenv("RUN_PROCESSING", "yes")
+SVD_HOST = os.getenv("SVD_HOST", "0.0.0.0")
+SVD_PORT = int(os.getenv("SVD_PORT", 9000))
+GPU = os.getenv("SVD_GPU","cuda:0")
 GO_LIVEPEER_URL = os.getenv("GO_LIVEPEER_URL","https://127.0.0.1:8935")
 GO_LIVEPEER_SECRET = os.getenv("GO_LIVEPEER_SECRET", "verybigsecret")
-
-
-HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", 9000))
-GPU = os.getenv("GPU","cuda:0")
 CAPABILITY = os.getenv("LIVEPEER_JOB_CAPABILITY", "stable-video-diffusion")
-CAPABILITY_URL = os.getenv("LIVEPEER_JOB_URL","http://"+HOST+":"+str(PORT)+"/process")
+CAPABILITY_URL = os.getenv("LIVEPEER_JOB_CAPABILITY_URL","http://"+SVD_HOST+":"+str(SVD_PORT)+"/process")
 CAPABILITY_DESC = os.getenv("LIVEPEER_JOB_CAPABILITY_DESCRIPTION", "generate videos using stable-video-diffusion")
 CAPABILITY_CAPACITY = int(os.getenv("LIVEPEER_JOB_CAPABILITY_CAPACITY", 1))
 CAPABILITY_PRICE = os.getenv("LIVEPEER_JOB_CAPABILITY_PRICE", "1695421/1000")
