@@ -518,7 +518,7 @@
             let ev = t_params.FaceValue * t_params.WinProb / maxWinProb;
             let numTickets = 1;
             if (cost > ev) {
-                numTickets = (cost / ev) + 1;
+                numTickets = (cost / ev) + BigInt(1);
             }
             
             let tickets = [];

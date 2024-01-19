@@ -1,5 +1,5 @@
 - run check_cuda_devices.py to get ordering of GPUS if have more than one
-- need lets encrypt SSL cert to get requests directly to orchestrator
+- need real SSL cert to get requests directly to orchestrator (no self signed cert)
   - this needed go-livepeer code update to not generate cert/key with every startup
   - commands
       //install certbot

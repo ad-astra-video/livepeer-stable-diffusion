@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+url = "https://download.pytorch.org/whl/cu121"
+verify_ssl = false
+name = "cudatorch"
+
+[packages]
+torch = {index = "cudatorch",version = "*"}
+torchaudio = {index = "cudatorch",version = "*"}
+torchvision = {index = "cudatorch",version = "*"}
+diffusers = "*"
+transformers = "*"
+accelerate = "*"
+python-multipart = "*"
+opencv-python = "*"
+httpx = "*"
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}

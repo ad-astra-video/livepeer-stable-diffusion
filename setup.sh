@@ -9,9 +9,10 @@ fi
 
 python3 -m venv venv
 source venv/bin/activate
-pip install diffusers transformers accelerate python-multipart
-pip install httpx
-pip install fastapi uvicorn[standard]
+pip install -r requirements.txt
+#pip install diffusers transformers accelerate python-multipart opencv-python
+#pip install httpx
+#pip install fastapi uvicorn[standard]
 
 
 
