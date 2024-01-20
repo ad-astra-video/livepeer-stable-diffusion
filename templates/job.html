@@ -55,8 +55,14 @@
                                                 <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value=25>
                                             </div>
                                             <div class="col-sm">
+                                                <label for="size">steps</label>
+                                                <input type="number" class="form-control" name="steps" id="steps" value=25>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm">
                                                 <label for="size">frames</label>
-                                                <input type="number" class="form-control" name="frames" id="size" value=25>
+                                                <input type="number" class="form-control" name="frames" id="frames" value=25>
                                             </div>
                                             <div class="col-sm">
                                                 <label for="size">duration (seconds)</label>
@@ -293,7 +299,8 @@
                                                 "motion_bucket_id": data.get("motion_bucket_id"),
                                                 "noise_aug_strength": data.get("noise_aug_strength"),
                                                 "duration": data.get("dur"),
-                                                "num_frames":data.get("frames")
+                                                "num_frames":data.get("frames"),
+                                                "num_inference_steps":data.get("steps")
                                               });
             var pmtHdr = btoa(JSON.stringify(payment));
             var jobHdr = btoa(JSON.stringify(job));

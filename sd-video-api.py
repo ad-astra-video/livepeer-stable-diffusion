@@ -45,6 +45,7 @@ async def startup(app: FastAPI):
     if RUN_PROCESSING == "yes":
         print("loading models")
         #setup stable video diffusion pipeline
+        #https://github.com/huggingface/diffusers/blob/main/src/diffusers/pipelines/stable_video_diffusion/pipeline_stable_video_diffusion.py
         pipe = StableVideoDiffusionPipeline.from_pretrained(
             "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
         )
@@ -176,12 +177,13 @@ async def generate_video(request_data: UploadFile | None = None, livepeer_job: A
             seed = int(params.get("seed",-1))
             fps = int(params.get("fps", 25))
             num_frames = int(params.get("num_frames", 25))
+            num_inference_steps = int(params.get("num_inference_steps"), 25)
             motion_bucket_id = int(params.get("motion_bucket_id", 180))
             noise_aug_strength = float(params.get("noise_aug_strength", 0.1))
             duration = int(params.get("duration", 2))
             generator = torch.manual_seed(seed)
             
-            frames = pipe(image, decode_chunk_size=decode_chunk_size, generator=generator, motion_bucket_id=motion_bucket_id, noise_aug_strength=noise_aug_strength, num_frames=num_frames).frames[0]
+            frames = pipe(image, decode_chunk_size=decode_chunk_size, generator=generator, num_inference_steps=num_inference_steps, motion_bucket_id=motion_bucket_id, noise_aug_strength=noise_aug_strength, num_frames=num_frames).frames[0]
             
             output_file = DATA_PATH+"/"+job["id"]+".mp4"
             print("saving output to: "+output_file)
