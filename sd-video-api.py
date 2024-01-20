@@ -175,7 +175,7 @@ async def generate_video(request_data: UploadFile | None = None, livepeer_job: A
             #set parameters
             params = json.loads(job["parameters"])
             seed = int(params.get("seed",-1))
-            fps = int(params.get("fps", 25))
+            fps = int(params.get("fps", 10))
             num_frames = int(params.get("num_frames", 25))
             num_inference_steps = int(params.get("num_inference_steps"), 25)
             motion_bucket_id = int(params.get("motion_bucket_id", 127))
