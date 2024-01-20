@@ -52,15 +52,15 @@
                                         <div class="row">
                                             <div class="col-sm">
                                                 <label for="fps">fps</label>
-                                                <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value=7>
+                                                <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value=25>
                                             </div>
                                             <div class="col-sm">
-                                                <label for="size">size</label>
-                                                <input type="text" class="form-control-plaintext" name="size" id="size" value="1024x576" readonly>
+                                                <label for="size">frames</label>
+                                                <input type="number" class="form-control" name="frames" id="size" value=25>
                                             </div>
                                             <div class="col-sm">
                                                 <label for="size">duration (seconds)</label>
-                                                <input type="text" class="form-control-plaintext" name="dur" id="dur" value="2" readonly>
+                                                <input type="text" class="form-control" name="dur" id="dur" value="2">
                                             </div>
                                         </div>
                                         <div class="row">
@@ -292,7 +292,8 @@
                                                 "fps": parseInt(data.get("fps")),
                                                 "motion_bucket_id": data.get("motion_bucket_id"),
                                                 "noise_aug_strength": data.get("noise_aug_strength"),
-                                                "duration": data.get("dur")
+                                                "duration": data.get("dur"),
+                                                "num_frames":data.get("frames")
                                               });
             var pmtHdr = btoa(JSON.stringify(payment));
             var jobHdr = btoa(JSON.stringify(job));
