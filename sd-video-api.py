@@ -178,8 +178,8 @@ async def generate_video(request_data: UploadFile | None = None, livepeer_job: A
             fps = int(params.get("fps", 25))
             num_frames = int(params.get("num_frames", 25))
             num_inference_steps = int(params.get("num_inference_steps"), 25)
-            motion_bucket_id = int(params.get("motion_bucket_id", 180))
-            noise_aug_strength = float(params.get("noise_aug_strength", 0.1))
+            motion_bucket_id = int(params.get("motion_bucket_id", 127))
+            noise_aug_strength = float(params.get("noise_aug_strength", 0.02))
             duration = int(params.get("duration", 2))
             generator = torch.manual_seed(seed)
             
