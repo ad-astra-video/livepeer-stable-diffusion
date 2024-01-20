@@ -355,9 +355,9 @@
         
         function calculateCost(data, priceInfo) {
             const fps = data.get("fps");
-            const size = data.get("size").split("x");
-            const width = size[0];
-            const height = size[1];
+            //const size = data.get("size").split("x");
+            const width = 1024;
+            const height = 576;
             const dur = data.get("dur");
             
             const pixels = BigInt(width) * BigInt(height) * BigInt(fps) * BigInt(dur);
