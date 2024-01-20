@@ -22,14 +22,20 @@
                         </div>            
                         <div class="row">
                             <div class="col form-inline">
-                                <label for="orchUrl">Orchestrator Url</label>
-                                <input type="text" class="form-control" id="orchUrl" value="{{ go_livepeer_url }}">
+                                <label for="orch_url">Orchestrator Url</label>
+                                <input type="text" class="form-control" id="orch_url" value="{{ go_livepeer_url }}">
                             </div>
                         </div>
                         <div class="row">
                             <div class="col form-inline">
                                 <label for="max_price">Max Price Per Pixel</label>
                                 <input type="number" min-step=1 class="form-control" id="max_price" value=100>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <label class="form-label" for="timeout_seconds">timeout</label>
+                                <input type="number" min=1 step=1 class="form-control" id="timeout_seconds" value=600>
                             </div>
                         </div>
                         <form id="jobForm">
@@ -44,39 +50,26 @@
                                             </div>
                                         </div>
                                         <div class="row">
-                                            <div class="col">
-                                                <label class="form-label" for="timeoutSeconds">timeout</label>
-                                                <input type="number" min=1 step=1 class="form-control" name="timeoutSeconds" id="timeoutSeconds" value=600>
+                                            <div class="col-sm">
+                                                <label for="seed">seed</label>
+                                                <input type="number" min=-1 step=1 class="form-control" name="seed" id="seed" value="-1">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-sm">
                                                 <label for="fps">fps</label>
-                                                <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value=10>
+                                                <input type="number" min=1 step=1 class="form-control" name="fps" id="fps" value="10">
                                             </div>
                                             <div class="col-sm">
-                                                <label for="size">steps</label>
-                                                <input type="number" class="form-control" name="steps" id="steps" value=25>
+                                                <label for="size">duration (seconds)</label>
+                                                <input type="text" min=1 step=1 class="form-control" name="dur" id="dur" value="2">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-sm">
                                                 <label for="size">frames</label>
-                                                <input type="number" class="form-control" name="frames" id="frames" value=25>
+                                                <input type="number" min=1 step=1 class="form-control" name="frames" id="frames" value="25">
                                             </div>
-                                            <div class="col-sm">
-                                                <label for="size">duration (seconds)</label>
-                                                <input type="text" class="form-control" name="dur" id="dur" value="2">
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-sm">
-                                                <label for="seed">seed</label>
-                                                <input type="number" min=-1 step=1 class="form-control" name="seed" id="seed" value=-1>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            
                                         </div>
                                         <div class="row">
                                             <div class="col-sm">
@@ -240,15 +233,18 @@
             const submit_btn = document.getElementById("submit_job");
             submit_btn.setAttribute("disabled", "disabled");
             
+            //get request details
+            const orch_url = document.getElementById("orch_url").value;
+            const max_price = document.getElementById("max_price").value;
+            const timeout = document.getElementById("timeout_seconds").value;
+            
             const data = new FormData(jobForm);
             var sig = await SignAddr();
             if (!sig) {
                 return
             }
             
-            
             //get token for job
-            const orch_url = document.getElementById("orchUrl").value;
             let resp = await fetch(orch_url+"/getToken", {
                                     method: "GET",
                                     headers: {"Content-Type": "application/json",
@@ -262,13 +258,23 @@
                                     });
             
             if (resp.status != 200) {
-                alert("failed to get token: "+resp.statusText);
+                alert("exiting, failed to get token: "+resp.statusText);
                 return
             }
             
             const token = await resp.json();
             console.log(token);
             
+            //check if price is acceptable
+            let price = BigInt(0);
+            if ("priceInfo" in token) {
+                price = calcPrice(token["priceInfo"]);
+                if (price > max_price) {
+                    alert("price to high, stopping processing")
+                }
+            }
+            
+            //validate ticket params
             if ("ticketParams" in token) {
                 validated = await validateTicketParams(token["ticketParams"]);
                 if (!validated) {
@@ -282,7 +288,7 @@
             
             //const ticketParams = parseTicketParams(token["ticketParams"]);
             
-            const cost = calculateCost(data, token["priceInfo"]);
+            const cost = calculateCost(data, price);
             const tickets = await createTickets(cost, token["ticketParams"]);
             const payment = genPayment(token, accounts[0], tickets);
             
@@ -290,7 +296,7 @@
             
             job["id"] = token["jobId"];
             job["token"] = token["token"];
-            job["timeoutSeconds"] = parseInt(data.get("timeoutSeconds"));
+            job["timeoutSeconds"] = parseInt(timeout);
             job["dataHash"] = fileHash;
             job["capability"] = "stable-video-diffusion";
             job["prompt"] = "stable-video-diffusion";
@@ -299,8 +305,7 @@
                                                 "motion_bucket_id": data.get("motion_bucket_id"),
                                                 "noise_aug_strength": data.get("noise_aug_strength"),
                                                 "duration": data.get("dur"),
-                                                "num_frames":data.get("frames"),
-                                                "num_inference_steps":data.get("steps")
+                                                "num_frames":data.get("frames")
                                               });
             var pmtHdr = btoa(JSON.stringify(payment));
             var jobHdr = btoa(JSON.stringify(job));
@@ -360,7 +365,7 @@
             }
         }
         
-        function calculateCost(data, priceInfo) {
+        function calculateCost(data, price) {
             const fps = data.get("fps");
             //const size = data.get("size").split("x");
             const width = 1024;
@@ -368,7 +373,6 @@
             const dur = data.get("dur");
             
             const pixels = BigInt(width) * BigInt(height) * BigInt(fps) * BigInt(dur);
-            const price = calcPrice(priceInfo);
             
             return pixels * price;
         }
